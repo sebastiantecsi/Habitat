@@ -21,11 +21,13 @@ namespace Sitecore.Feature.Demo.Controllers
     [SkipAnalyticsTracking]
     public class DemoController : SitecoreController
     {
-        public DemoStateService DemoStateService { get; }
+        private IDemoStateService DemoStateService { get; }
+        private IExperienceDataFactory ExperienceDataFactory { get; }
 
-        public DemoController(DemoStateService demoStateService)
+        public DemoController(IDemoStateService demoStateService, IExperienceDataFactory experienceDataFactory)
         {
             this.DemoStateService = demoStateService;
+            this.ExperienceDataFactory = experienceDataFactory;
         }
 
         public ActionResult ExperienceData()
@@ -41,13 +43,13 @@ namespace Sitecore.Feature.Demo.Controllers
                 return new EmptyResult();
             }
 
-            var experienceData = ServiceLocator.ServiceProvider.GetService<ExperienceData>();
+            var experienceData = this.ExperienceDataFactory.Get();
             return this.View(experienceData);
         }
 
         public ActionResult ExperienceDataContent()
         {
-            var experienceData = ServiceLocator.ServiceProvider.GetService<ExperienceData>();
+            var experienceData = this.ExperienceDataFactory.Get();
             return this.View("_ExperienceDataContent", experienceData);
         }
 

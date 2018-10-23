@@ -16,7 +16,7 @@ Import-Module "$PSScriptRoot\build\uninstall\uninstall.psm1" -Force
 
 $carbon = Get-Module Carbon
 if (-not $carbon) {
-    $carbon = Get-InstalledModule Carbon
+    $carbon = Get-InstalledModule Carbon -ErrorAction SilentlyContinue
     if (-not $carbon) {
         write-host "Installing Carbon..." -ForegroundColor Green
         Install-Module -Name 'Carbon' -AllowClobber -Scope CurrentUser -Repository PSGallery
@@ -63,8 +63,10 @@ Remove-SitecoreIisSite $SitecoreSiteName
 # Drop sitecore databases
 Remove-SitecoreDatabase -Name "${SolutionPrefix}_Core" -Server $database
 Remove-SitecoreDatabase -Name "${SolutionPrefix}_ExperienceForms" -Server $database
+Remove-SitecoreDatabase -Name "${SolutionPrefix}_EXM.Master" -Server $database
 Remove-SitecoreDatabase -Name "${SolutionPrefix}_Master" -Server $database
 Remove-SitecoreDatabase -Name "${SolutionPrefix}_Web" -Server $database
+Remove-SitecoreDatabase -Name "${SolutionPrefix}_Messaging" -Server $database
 
 # Delete sitecore files
 Remove-SitecoreFiles $SitecoreSiteRoot
@@ -86,3 +88,23 @@ Start-Service $SolrService
 
 # Delete sitecore certificate
 Remove-SitecoreCertificate $SitecoreSiteName
+
+# Remove App Pool membership 
+try 
+{
+    Remove-LocalGroupMember "Performance Log Users" "IIS AppPool\$SitecoreSiteName"
+    Write-Host "Removed IIS AppPool\$SitecoreSiteName from Performance Log Users" -ForegroundColor Green
+}
+catch 
+{
+    Write-Host "Could not find IIS AppPool\$SitecoreSiteName in Performance Log Users" -ForegroundColor Yellow
+}
+try 
+{
+    Remove-LocalGroupMember "Performance Monitor Users" "IIS AppPool\$SitecoreSiteName"
+    Write-Host "Removed IIS AppPool\$SitecoreSiteName from Performance Monitor Users" -ForegroundColor Green
+}
+catch 
+{
+    Write-Host "Could not find IIS AppPool\$SitecoreSiteName to Performance Monitor Users" -ForegroundColor Yellow
+}
